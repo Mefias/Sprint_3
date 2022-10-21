@@ -11,10 +11,10 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 
 @RunWith(Parameterized.class)
 public class PostOrdersTest extends QaScooterHandle {
-    private String handle = "/api/v1/orders";
     private Order order;
 
     public PostOrdersTest(String name, String[] color) {
+        super("/api/v1/orders");
         Allure.description(name);
         order = new Order();
         order.setFirstName("Name123");
@@ -40,10 +40,7 @@ public class PostOrdersTest extends QaScooterHandle {
     @Test
     @DisplayName("All color variants return code 200 and track number")
     public void postOrderReturnsCode200AndTrack() {
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(order)
-                .post(handle);
+        Response response = getPostResponse(order, handle);
         printResponseToConsole(response);
         compareResponseCodeToTarget(response, 201);
         compareResponseBodyPartToTarget(response, "track", notNullValue(), "not null");

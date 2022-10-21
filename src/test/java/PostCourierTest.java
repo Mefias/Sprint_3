@@ -10,21 +10,25 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.hasSize;
 
 public class PostCourierTest extends QaScooterHandle {
-    private String handle = "/api/v1/courier/";
+    private Courier courier;
+    public PostCourierTest() {
+        super("/api/v1/courier/");
+    }
+
     @Before
     public void setUp() {
-        Courier courierForDelete = new Courier(myLogin, myPassword, null);
-        courierForDelete.delete();
+        courier = getRandomCourier();
+    }
+    @Before
+    public void tearDown() {
+        if (courier != null)
+            courier.delete();
     }
 
     @Test
     @DisplayName("Successful add courier returns Code 201: created")
     public void addReturnsSucceed() {
-        Courier courier = new Courier(myLogin, myPassword, "Kirill");
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courier)
-                .post(handle);
+        Response response = getPostResponse(courier, handle);
         printResponseToConsole(response);
         compareResponseCodeToTarget(response, 201);
         compareResponseBodyPartToTarget(response, "ok", equalTo(true), "is true");
@@ -32,27 +36,19 @@ public class PostCourierTest extends QaScooterHandle {
     @Test
     @DisplayName("Adding existing courier returns Code 409: already used")
     public void addExistingLoginCauseError409() {
-        Courier courier = new Courier(myLogin, myPassword, "Kirill");
-        given()
-                .header("Content-type", "application/json")
-                .body(courier)
-                .post(handle);
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courier)
-                .post(handle);
+        getPostResponse(courier, handle);
+        Response response = getPostResponse(courier, handle);
         printResponseToConsole(response);
         compareResponseCodeToTarget(response, 409);
         compareResponseMessageToTarget(response,"Этот логин уже используется");
     }
+
     @Test
     @DisplayName("Adding courier without login returns Code 400: not enough data")
     public void addWithoutLoginCauseError400() {
-        Courier courier = new Courier(null, "password12345", "name12345");
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courier)
-                .post(handle);
+        Courier wrongCourier = courier.clone();
+        wrongCourier.setLogin(null);
+        Response response = getPostResponse(wrongCourier, handle);
         printResponseToConsole(response);
         compareResponseCodeToTarget(response, 400);
         compareResponseMessageToTarget(response,"Недостаточно данных для создания учетной записи");
@@ -60,11 +56,9 @@ public class PostCourierTest extends QaScooterHandle {
     @Test
     @DisplayName("Adding courier without password returns Code 400: not enough data")
     public void addWithoutPasswordCauseError400() {
-        Courier courier = new Courier("login12345", null, "name12345");
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courier)
-                .post(handle);
+        Courier wrongCourier = courier.clone();
+        wrongCourier.setPassword(null);
+        Response response = getPostResponse(wrongCourier, handle);
         printResponseToConsole(response);
         compareResponseCodeToTarget(response, 400);
         compareResponseMessageToTarget(response,"Недостаточно данных для создания учетной записи");
@@ -72,11 +66,9 @@ public class PostCourierTest extends QaScooterHandle {
     @Test
     @DisplayName("Adding courier without name returns Code 400: not enough data")
     public void addWithoutNameCauseError400() {
-        Courier courier = new Courier("login12345", "password12345", null);
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(courier)
-                .post(handle);
+        Courier wrongCourier = courier.clone();
+        wrongCourier.setFirstName(null);
+        Response response = getPostResponse(wrongCourier, handle);
         printResponseToConsole(response);
         compareResponseCodeToTarget(response, 400);
         compareResponseMessageToTarget(response,"Недостаточно данных для создания учетной записи");

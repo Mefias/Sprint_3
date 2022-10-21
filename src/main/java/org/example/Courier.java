@@ -69,4 +69,7 @@ public class Courier {
                 .body(this)
                 .post("/api/v1/courier/");
     }
+    public Courier clone() {
+        return new Courier(login, password, firstName);
+    }
 }

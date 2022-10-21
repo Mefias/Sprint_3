@@ -1,7 +1,9 @@
+import com.github.javafaker.Faker;
 import io.qameta.allure.Step;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.example.Courier;
+import org.example.Order;
 import org.hamcrest.Matcher;
 import org.junit.BeforeClass;
 
@@ -9,25 +11,46 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 public class QaScooterHandle {
-    public String handle;
-    public static final String myLogin = "k-nosov";
-    public static final String myPassword = "1234";
-    public static final String nonExistingLogin = "k-nosov123456789";
+    public static final String baseURI = "https://qa-scooter.praktikum-services.ru";
+    public static final Faker faker = new Faker();
+    public final String handle;
+
+    public QaScooterHandle(String handle) {
+        this.handle = handle;
+    }
 
     @BeforeClass
-    public static void SetUpBaseUri() {
-        RestAssured.baseURI= "https://qa-scooter.praktikum-services.ru";
+    public static void setUpBaseUri() {
+        RestAssured.baseURI= baseURI;
     }
-    public static Courier getMyCourier() {
-        return new Courier(myLogin, myPassword, "Kirill");
+    public static Courier getRandomCourier() {
+        String login = faker.internet().emailAddress();
+        String password = faker.internet().password();
+        String firstName = faker.name().firstName();
+
+        return new Courier(login, password, firstName);
     }
-    public static void deleteMyCourier() {
-        Courier courier = getMyCourier();
-        courier.delete();
+    @Step("Post request with courier to {handle}")
+    public Response getPostResponse(Courier courier, String handle) {
+        return getPostResponse((Object) courier, handle);
     }
-    public static void createMyCourier() {
-        Courier courier = getMyCourier();
-        courier.create();
+    @Step("Post request with order to {handle}")
+    public Response getPostResponse(Order order, String handle) {
+        return getPostResponse((Object) order, handle);
+    }
+    private Response getPostResponse(Object body, String handle) {
+        Response response = given()
+                .header("Content-type", "application/json")
+                .body(body)
+                .post(handle);
+        return response;
+    }
+    @Step("Get request with no body to {handle}")
+    public Response getGetResponse(String handle) {
+        Response response = given()
+                .header("Content-type", "application/json")
+                .get(handle);
+        return response;
     }
     @Step("Compare response message to {message}")
     public void compareResponseMessageToTarget(Response response, String message) {
